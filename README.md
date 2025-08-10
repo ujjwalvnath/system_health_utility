@@ -70,16 +70,19 @@ The client will:
 ---
 You can build executable binary for any platform from your dev machine:
 
-# macOS
+#### macOS
+```bash
 GOOS=darwin GOARCH=amd64 go build -o sysutil-darwin-amd64
 GOOS=darwin GOARCH=arm64 go build -o sysutil-darwin-arm64
-
-# Windows
+```
+#### Windows
+```bash
 GOOS=windows GOARCH=amd64 go build -o sysutil-windows-amd64.exe
-
-# Linux
+```
+#### Linux
+```bash
 GOOS=linux GOARCH=amd64 go build -o sysutil-linux-amd64
-
+```
 
 ### 4️⃣ View Dashboard
 
