@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>System Health Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div id="app" class="container mx-auto">
+    <div class="bg-white p-4 rounded shadow">
+      <h1 class="text-2xl font-bold mb-4">System Health Dashboard</h1>
+
+      <div class="flex items-center gap-4 mb-4">
+        <select v-model="filterOS" @change="fetchMachines" class="border p-2 rounded">
+          <option value="">All OS</option>
+          <option v-for="os in uniqueOS" :key="os">{{ os }}</option>
+        </select>
+
+        <label class="flex items-center gap-2">
+          <input type="checkbox" v-model="onlyIssues" @change="fetchMachines" />
+          Show only issues
+        </label>
+
+        <button @click="fetchMachines" class="ml-auto px-3 py-2 bg-blue-600 text-white rounded">Refresh</button>
+        <a :href="exportUrl" class="ml-2 px-3 py-2 bg-gray-700 text-white rounded">Export CSV</a>
+      </div>
+
+      <table class="min-w-full border">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2 border">Machine Name</th>
+            <th class="p-2 border">Machine ID</th>
+            <th class="p-2 border">OS</th>
+            <th class="p-2 border">Disk Encrypted</th>
+            <th class="p-2 border">OS Update</th>
+            <th class="p-2 border">Antivirus</th>
+            <th class="p-2 border">Sleep (min)</th>
+            <th class="p-2 border">Has Issues</th>
+            <th class="p-2 border">Last Check</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="m in machines" :key="m.machine_id" :class="{'bg-red-100': m.has_issues}">
+            <td class="p-2 border">{{ m.machine_name || '-' }}</td>
+            <td class="p-2 border font-mono text-sm">{{ m.machine_id }}</td>
+            <td class="p-2 border">{{ m.os }}{{ m.os_version ? ' ' + m.os_version : '' }}</td>
+            <td class="p-2 border">{{ m.disk_encrypted ? 'Yes' : 'No' }}</td>
+            <td class="p-2 border">{{ m.os_up_to_date ? 'Up-to-date' : 'Updates Available' }}</td>
+            <td class="p-2 border">{{ m.antivirus_present ? 'Active' : 'Missing' }}</td>
+            <td class="p-2 border">{{ m.inactivity_sleep_minutes }}</td>
+            <td class="p-2 border">{{ m.has_issues ? 'Yes' : 'No' }}</td>
+            <td class="p-2 border">{{ m.last_check }}</td>
+          </tr>
+          <tr v-if="machines.length === 0">
+            <td colspan="9" class="p-4 text-center text-gray-500">No machines reporting yet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      machines: [],
+      filterOS: "",
+      onlyIssues: false,
+      pollInterval: null,
+      baseUrl: "http://localhost:5000"
+    };
+  },
+  computed: {
+    uniqueOS() {
+      const set = new Set(this.machines.map(m => m.os).filter(Boolean));
+      return Array.from(set);
+    },
+    exportUrl() {
+      const params = new URLSearchParams();
+      if (this.filterOS) params.set("os", this.filterOS);
+      if (this.onlyIssues) params.set("only_issues", "1");
+      return `${this.baseUrl}/export.csv?${params.toString()}`;
+    }
+  },
+  methods: {
+    fetchMachines() {
+      const params = new URLSearchParams();
+      if (this.filterOS) params.set("os", this.filterOS);
+      if (this.onlyIssues) params.set("only_issues", "1");
+      fetch(`${this.baseUrl}/machines?${params.toString()}`)
+        .then(r => r.json())
+        .then(data => {
+          this.machines = data;
+        })
+        .catch(err => {
+          console.error("fetch error", err);
+        });
+    }
+  },
+  mounted() {
+    this.fetchMachines();
+    // auto-refresh every 30s
+    this.pollInterval = setInterval(this.fetchMachines, 30000);
+  },
+  beforeUnmount() {
+    if (this.pollInterval) clearInterval(this.pollInterval);
+  }
+}).mount("#app");
+</script>
+</body>
+</html>
