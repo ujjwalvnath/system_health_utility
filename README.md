@@ -86,6 +86,13 @@ GOOS=linux GOARCH=amd64 go build -o sysutil-linux-amd64
 
 ### 4️⃣ View Dashboard
 
+cd into frontend folder and in terminal
+
+```bash
+npm install
+npm run dev
+```
+
 Open `frontend/index.html` in your browser.  
 The dashboard will:
 - Fetch system list from backend
